@@ -19,9 +19,7 @@ from app.repositories.history_repository import HistoryRepository
 load_dotenv()
 
 settings = Settings()
-
 logger = setup_logger(__name__, level=settings.log_level)
-
 
 geocoding_client: GeocodingClient = None
 weather_client: WeatherClient = None
@@ -36,31 +34,30 @@ history_repository: HistoryRepository = None
 async def lifespan(app: FastAPI):
     global geocoding_client, weather_client, places_client
     global weather_agent, places_agent, tourism_agent, history_repository
-    
+
     logger.info(f"Starting {settings.app_name} v{settings.app_version}...")
-    
+
     await init_db(settings)
-    
-    # Use the same path resolution function as init_db
+
     db_path = _get_db_path(settings)
     logger.info(f"Database path: {db_path}")
     history_repository = HistoryRepository(db_path)
-    
+
     geocoding_client = GeocodingClient(
         base_url=settings.nominatim_base_url,
         user_agent=settings.user_agent
     )
     weather_client = WeatherClient(base_url=settings.open_meteo_base_url)
     places_client = PlacesClient(base_url=settings.overpass_base_url)
-    
+
     weather_agent = WeatherAgent(geocoding_client, weather_client)
     places_agent = PlacesAgent(geocoding_client, places_client)
     tourism_agent = TourismAIAgent(weather_agent, places_agent)
-    
+
     logger.info("Tourism AI Multi-Agent System started successfully!")
-    
+
     yield
-    
+
     logger.info("Shutting down Tourism AI Multi-Agent System...")
     await geocoding_client.close()
     await weather_client.close()
@@ -79,16 +76,17 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        # Local dev
         "http://localhost:5173",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
-        # Allow all Render frontend subdomains
-        "https://*.onrender.com",
-        "http://*.onrender.com",
+
+        # Render frontend URL
+        "https://YOUR-RENDER-FRONTEND-URL",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
@@ -104,17 +102,15 @@ async def root():
             "/history": "GET - Get recent query history",
             "/history/stats": "GET - Get query statistics",
             "/history/place/{place_name}": "GET - Get history for a specific place",
-            "/docs": "GET - API documentation (Swagger UI)",
-            "/redoc": "GET - API documentation (ReDoc)"
+            "/docs": "Swagger UI",
+            "/redoc": "ReDoc UI",
         }
     }
 
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for Railway and monitoring"""
     try:
-        # Quick check if agents are initialized
         if tourism_agent is None:
             return {"status": "starting", "service": "tourism-ai-system"}
         return {"status": "healthy", "service": "tourism-ai-system", "version": settings.app_version}
@@ -125,17 +121,12 @@ async def health_check():
 
 @app.get("/history")
 async def get_query_history(limit: int = 10, days: int = None):
-    """Get recent query history"""
     try:
         if not history_repository:
             raise HTTPException(status_code=503, detail="Repository not initialized")
-        
+
         history = await history_repository.get_recent(limit=limit, days=days)
-        return {
-            "success": True,
-            "count": len(history),
-            "history": history
-        }
+        return {"success": True, "count": len(history), "history": history}
     except Exception as e:
         logger.error(f"Error fetching query history: {e}")
         raise HTTPException(status_code=500, detail=f"Error fetching history: {str(e)}")
@@ -143,11 +134,10 @@ async def get_query_history(limit: int = 10, days: int = None):
 
 @app.get("/history/stats")
 async def get_query_stats():
-    """Get query statistics"""
     try:
         if not history_repository:
             raise HTTPException(status_code=503, detail="Repository not initialized")
-        
+
         stats = await history_repository.get_stats()
         return {"success": True, "stats": stats}
     except Exception as e:
@@ -157,11 +147,10 @@ async def get_query_stats():
 
 @app.get("/history/place/{place_name}")
 async def get_place_history(place_name: str, limit: int = 5):
-    """Get query history for a specific place"""
     try:
         if not history_repository:
             raise HTTPException(status_code=503, detail="Repository not initialized")
-        
+
         history = await history_repository.get_by_place(place_name=place_name, limit=limit)
         return {
             "success": True,
@@ -174,29 +163,27 @@ async def get_place_history(place_name: str, limit: int = 5):
         raise HTTPException(status_code=500, detail=f"Error fetching place history: {str(e)}")
 
 
+# Preflight for /query
 @app.options("/query")
 async def options_query():
-    """Handle CORS preflight for /query endpoint"""
     return {"message": "OK"}
 
 
 @app.post("/query", response_model=TourismResponse)
 async def query_tourism(request: TourismRequest, http_request: Request):
-    """Main endpoint for tourism queries"""
     try:
         logger.info(f"Received query: {request.query}")
-        
+
         if not tourism_agent:
-            logger.error("Tourism agent not initialized")
             raise HTTPException(status_code=503, detail="Service not initialized")
-        
+
         user_ip = http_request.client.host if http_request.client else None
-        
+
         response = await tourism_agent.process_query(
             query=request.query,
             place_name=request.place
         )
-        
+
         if history_repository:
             try:
                 history_id = await history_repository.save_interaction(
@@ -214,16 +201,15 @@ async def query_tourism(request: TourismRequest, http_request: Request):
                 logger.info(f"Saved query history with ID: {history_id}")
             except Exception as db_error:
                 logger.error(f"Failed to save query history: {db_error}", exc_info=True)
-        
+
         logger.info(f"Query processed successfully for: {response.place_name}")
         return response
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error processing query: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
 
 if __name__ == "__main__":
     import uvicorn
@@ -234,4 +220,3 @@ if __name__ == "__main__":
         reload=True,
         log_level=settings.log_level.lower()
     )
-

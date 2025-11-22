@@ -1,16 +1,20 @@
 import axios from 'axios';
 import type { TourismRequest, TourismResponse, QueryHistory, QueryStats } from '../types';
 
-// Use environment variable or default to localhost for development
-// In Docker, VITE_API_BASE_URL will be set to http://backend:8000
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8000"; // Used ONLY locally, never on Render (Render always injects VITE_API_BASE_URL)
+
+// Log for debugging (remove after confirming)
+console.log("API Base URL:", API_BASE_URL);
+
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  timeout: 120000, //timeout for Render free tier (wake-up can take 30-60 seconds, giving extra buffer)
+  timeout: 120000, // Allow long wake-up on Render Free Tier
 });
 
 export const tourismAPI = {
@@ -28,12 +32,13 @@ export const tourismAPI = {
   async getHistory(limit: number = 10, days?: number): Promise<QueryHistory[]> {
     const params: { limit: number; days?: number } = { limit };
     if (days) params.days = days;
-    
+
     const response = await apiClient.get<{
       success: boolean;
       count: number;
       history: QueryHistory[];
     }>('/history', { params });
+
     return response.data.history;
   },
 
@@ -45,6 +50,7 @@ export const tourismAPI = {
       success: boolean;
       stats: QueryStats;
     }>('/history/stats');
+
     return response.data.stats;
   },
 
@@ -60,6 +66,7 @@ export const tourismAPI = {
     }>(`/history/place/${encodeURIComponent(placeName)}`, {
       params: { limit },
     });
+
     return response.data.history;
   },
 
@@ -71,4 +78,3 @@ export const tourismAPI = {
     return response.data;
   },
 };
-

@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from app.models.base import BaseResponse
 
 
 class LocationResponse(BaseModel):
@@ -38,11 +39,10 @@ class TourismRequest(BaseModel):
     place: Optional[str] = Field(None, description="Optional explicit place name")
 
 
-class TourismResponse(BaseModel):
+class TourismResponse(BaseResponse):
     """Complete tourism response"""
     place_name: str
     weather: Optional[WeatherResponse] = None
     places: Optional[List[PlaceInfo]] = None
     error: Optional[str] = None
-    message: str
 

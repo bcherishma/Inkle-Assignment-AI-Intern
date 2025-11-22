@@ -1,13 +1,10 @@
 # FastAPI application for Tourism AI Multi-Agent System
-import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
+from app.config import Settings
 from app.models.schemas import TourismRequest, TourismResponse
 from app.clients.geocoding_client import GeocodingClient
 from app.clients.weather_client import WeatherClient
@@ -20,20 +17,11 @@ from app.utils.logger import setup_logger
 # Load environment variables
 load_dotenv()
 
-logger = setup_logger(__name__)
+# Initialize settings
+settings = Settings()
 
-
-class Settings(BaseSettings):
-    nominatim_base_url: str = os.getenv("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org/search")
-    open_meteo_base_url: str = os.getenv("OPEN_METEO_BASE_URL", "https://api.open-meteo.com/v1/forecast")
-    overpass_base_url: str = os.getenv("OVERPASS_BASE_URL", "https://overpass-api.de/api/interpreter")
-    user_agent: str = os.getenv("USER_AGENT", "TourismAI/1.0")
-    api_host: str = os.getenv("API_HOST", "0.0.0.0")
-    api_port: int = int(os.getenv("API_PORT", "8000"))
-    log_level: str = os.getenv("LOG_LEVEL", "INFO")
-
-    class Config:
-        env_file = ".env"
+# Setup logger
+logger = setup_logger(__name__, level=settings.log_level)
 
 
 # Global clients and agents
@@ -51,9 +39,7 @@ async def lifespan(app: FastAPI):
     global geocoding_client, weather_client, places_client
     global weather_agent, places_agent, tourism_agent
     
-    settings = Settings()
-    
-    logger.info("Starting Tourism AI Multi-Agent System...")
+    logger.info(f"Starting {settings.app_name} v{settings.app_version}...")
     
     # Initialize clients
     geocoding_client = GeocodingClient(
@@ -82,9 +68,9 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="Tourism AI Multi-Agent System",
-    description="A multi-agent system for tourism information using weather and places APIs",
-    version="1.0.0",
+    title=settings.app_name,
+    description=settings.app_description,
+    version=settings.app_version,
     lifespan=lifespan
 )
 
@@ -97,34 +83,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files for UI
-static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-logger.info(f"Static directory: {static_dir}, exists: {os.path.exists(static_dir)}")
-
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
-    logger.info("Static files mounted at /static")
-
-@app.get("/ui")
-async def serve_ui():
-    ui_path = os.path.join(static_dir, "index.html")
-    logger.info(f"Serving UI from: {ui_path}, exists: {os.path.exists(ui_path)}")
-    if os.path.exists(ui_path):
-        return FileResponse(ui_path, media_type="text/html")
-    return {"message": "UI not found", "path": ui_path}
-
 @app.get("/")
 async def root():
-    ui_path = os.path.join(static_dir, "index.html")
-    if os.path.exists(ui_path):
-        return FileResponse(ui_path, media_type="text/html")
     return {
         "message": "Tourism AI Multi-Agent System API",
-        "version": "1.0.0",
-        "ui": "/ui",
-        "api_docs": "/docs",
-        "static_dir": static_dir,
-        "index_exists": os.path.exists(ui_path)
+        "version": settings.app_version,
+        "endpoints": {
+            "/query": "POST - Query tourism information",
+            "/health": "GET - Health check",
+            "/docs": "GET - API documentation (Swagger UI)",
+            "/redoc": "GET - API documentation (ReDoc)"
+        }
     }
 
 
@@ -160,11 +129,11 @@ async def query_tourism(request: TourismRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    settings = Settings()
     uvicorn.run(
         "app.main:app",
         host=settings.api_host,
         port=settings.api_port,
-        reload=True
+        reload=True,
+        log_level=settings.log_level.lower()
     )
 

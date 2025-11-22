@@ -1,22 +1,40 @@
-"""Logging configuration"""
+"""Logging configuration and utilities"""
 
 import logging
 import sys
 from typing import Optional
+import os
 
 
-def setup_logger(name: str, level: Optional[str] = "INFO") -> logging.Logger:
-    """Setup and configure logger"""
+def setup_logger(name: str, level: Optional[str] = None) -> logging.Logger:
+    """
+    Setup and configure logger
+    
+    Args:
+        name: Logger name (usually __name__)
+        level: Logging level (INFO, DEBUG, WARNING, ERROR). 
+               If None, uses LOG_LEVEL env var or defaults to INFO
+    
+    Returns:
+        Configured logger instance
+    """
+    # Get log level from env or parameter
+    if level is None:
+        level = os.getenv("LOG_LEVEL", "INFO").upper()
+    
     logger = logging.getLogger(name)
-    logger.setLevel(getattr(logging, level.upper(), logging.INFO))
+    log_level = getattr(logging, level, logging.INFO)
+    logger.setLevel(log_level)
     
     # Avoid duplicate handlers
     if logger.handlers:
         return logger
     
+    # Create console handler
     handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(getattr(logging, level.upper(), logging.INFO))
+    handler.setLevel(log_level)
     
+    # Create formatter
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
@@ -25,4 +43,17 @@ def setup_logger(name: str, level: Optional[str] = "INFO") -> logging.Logger:
     logger.addHandler(handler)
     
     return logger
+
+
+def get_logger(name: str) -> logging.Logger:
+    """
+    Get or create a logger instance
+    
+    Args:
+        name: Logger name
+        
+    Returns:
+        Logger instance
+    """
+    return setup_logger(name)
 

@@ -1,4 +1,3 @@
-# Parent Tourism AI Agent - Orchestrator
 import re
 from typing import Optional, Tuple
 from app.models.schemas import TourismResponse, WeatherResponse, PlaceInfo
@@ -149,6 +148,7 @@ class TourismAIAgent:
             
             if not place_name:
                 return TourismResponse(
+                    success=False,
                     place_name="",
                     message="I couldn't identify the place name from your query. Please specify a place.",
                     error="PLACE_NOT_FOUND"
@@ -171,6 +171,7 @@ class TourismAIAgent:
                 weather_result = await self.weather_agent.get_weather_info(place_name)
                 if not weather_result:
                     return TourismResponse(
+                        success=False,
                         place_name=place_name,
                         message=f"I don't know if this place exists: {place_name}. Could you check the spelling?",
                         error="PLACE_NOT_FOUND"
@@ -183,6 +184,7 @@ class TourismAIAgent:
                     location_check = await self.weather_agent.get_weather_info(place_name)
                     if not location_check:
                         return TourismResponse(
+                            success=False,
                             place_name=place_name,
                             message=f"I don't know if this place exists: {place_name}. Could you check the spelling?",
                             error="PLACE_NOT_FOUND"
@@ -191,12 +193,14 @@ class TourismAIAgent:
                     # Still return weather if available, but mention places couldn't be fetched
                     if weather_result:
                         return TourismResponse(
+                            success=True,
                             place_name=place_name,
                             weather=weather_result,
                             places=[],
                             message=f"In {place_name} it's currently {weather_result.temperature:.0f}°C with a chance of {weather_result.rain_probability:.0f}% to rain. I couldn't fetch tourist attractions at the moment (the places API might be slow or unavailable)."
                         )
                     return TourismResponse(
+                        success=True,
                         place_name=place_name,
                         weather=weather_result,
                         places=[],
@@ -225,6 +229,7 @@ class TourismAIAgent:
             message = " ".join(message_parts) if message_parts else f"Information about {place_name}."
             
             return TourismResponse(
+                success=True,
                 place_name=place_name,
                 weather=weather_result,
                 places=places_result,
@@ -234,6 +239,7 @@ class TourismAIAgent:
         except Exception as e:
             logger.error(f"TourismAIAgent: Unexpected error - {e}")
             return TourismResponse(
+                success=False,
                 place_name=place_name or "",
                 message="An error occurred while processing your request. Please try again.",
                 error=str(e)

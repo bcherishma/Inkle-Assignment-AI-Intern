@@ -14,7 +14,6 @@ A production-ready multi-agent tourism system that provides weather information 
 - 🌤️ **Weather Information**: Current temperature and rain probability
 - 📍 **Tourist Attractions**: Up to 5 nearby tourist attractions, monuments, parks, and museums
 - 🛡️ **Error Handling**: Graceful handling of non-existent places
-- 🎨 **Beautiful Web UI**: Modern, responsive user interface
 - 🚀 **Production Ready**: Dockerized, scalable, and well-structured
 - 📝 **API Documentation**: Auto-generated Swagger/OpenAPI docs
 
@@ -34,7 +33,7 @@ A production-ready multi-agent tourism system that provides weather information 
 .
 ├── app/
 │   ├── __init__.py
-│   ├── main.py              # FastAPI application
+│   ├── main.py              # FastAPI application entry point
 │   ├── agents/
 │   │   ├── __init__.py
 │   │   ├── parent_agent.py  # Tourism AI Agent (orchestrator)
@@ -42,19 +41,19 @@ A production-ready multi-agent tourism system that provides weather information 
 │   │   └── places_agent.py  # Places Agent
 │   ├── clients/
 │   │   ├── __init__.py
-│   │   ├── geocoding_client.py  # Nominatim API
-│   │   ├── weather_client.py    # Open-Meteo API
-│   │   └── places_client.py     # Overpass API
+│   │   ├── geocoding_client.py  # Nominatim API client
+│   │   ├── weather_client.py    # Open-Meteo API client
+│   │   └── places_client.py     # Overpass API client
+│   ├── config/
+│   │   ├── __init__.py
+│   │   └── settings.py      # Application configuration
 │   ├── models/
 │   │   ├── __init__.py
-│   │   └── schemas.py       # Pydantic models
+│   │   ├── base.py          # Base model classes
+│   │   └── schemas.py       # Pydantic request/response models
 │   └── utils/
 │       ├── __init__.py
 │       └── logger.py        # Logging configuration
-├── static/
-│   ├── index.html           # Web UI
-│   ├── style.css            # UI styles
-│   └── script.js            # UI JavaScript
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
@@ -102,11 +101,11 @@ A production-ready multi-agent tourism system that provides weather information 
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
-6. **Access the application**:
-   - Web UI: http://localhost:8000 (or http://localhost:8000/ui)
-   - API: http://localhost:8000
-   - Documentation: http://localhost:8000/docs
-   - Alternative docs: http://localhost:8000/redoc
+6. **Access the API**:
+   - API Base: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs (Swagger UI)
+   - Alternative docs: http://localhost:8000/redoc (ReDoc)
+   - Health Check: http://localhost:8000/health
 
 ## Docker Deployment
 

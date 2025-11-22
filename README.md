@@ -100,7 +100,7 @@ docker-compose logs -f
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
 
-For detailed deployment instructions, see [DOCKER_GUIDE.md](./DOCKER_GUIDE.md) or [DEPLOYMENT.md](./DEPLOYMENT.md).
+For detailed deployment instructions, see [RENDER_DEPLOY.md](./RENDER_DEPLOY.md).
 
 ## Project Structure
 

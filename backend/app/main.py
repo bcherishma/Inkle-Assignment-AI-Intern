@@ -109,7 +109,15 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "tourism-ai-system"}
+    """Health check endpoint for Railway and monitoring"""
+    try:
+        # Quick check if agents are initialized
+        if tourism_agent is None:
+            return {"status": "starting", "service": "tourism-ai-system"}
+        return {"status": "healthy", "service": "tourism-ai-system", "version": settings.app_version}
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return {"status": "unhealthy", "error": str(e)}
 
 
 @app.get("/history")

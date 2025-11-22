@@ -17,10 +17,18 @@ def _get_db_path(settings: Settings) -> str:
     
     if db_path.startswith("./"):
         import os
-        current_file = os.path.abspath(__file__)
-        app_dir = os.path.dirname(current_file)
-        backend_dir = os.path.dirname(app_dir)
-        db_path = os.path.join(backend_dir, db_path[2:])
+        # Get the backend directory (where run.py is located)
+        # In Docker: WORKDIR is /app/backend, so run.py executes from /app/backend
+        # connection.py is at: /app/backend/app/database/connection.py
+        # We need: /app/backend/tourism_ai.db
+        # 
+        # Simplest approach: Use current working directory
+        # run.py sets cwd to /app/backend (via WORKDIR in Dockerfile)
+        # So ./tourism_ai.db resolves to /app/backend/tourism_ai.db
+        cwd = os.getcwd()
+        # In Docker: cwd = /app/backend
+        # Locally: cwd = /path/to/project/backend (when running: cd backend && python run.py)
+        db_path = os.path.join(cwd, db_path[2:])  # ./tourism_ai.db -> /app/backend/tourism_ai.db
     
     return db_path
 

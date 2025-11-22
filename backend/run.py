@@ -8,7 +8,7 @@ load_dotenv()
 
 if __name__ == "__main__":
     host = os.getenv("API_HOST", "0.0.0.0")
-    # Railway uses PORT env var, fallback to API_PORT or 8000
+    # Render/Railway use PORT env var, fallback to API_PORT or 8000
     port = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))
     log_level = os.getenv("LOG_LEVEL", "INFO").lower()
     

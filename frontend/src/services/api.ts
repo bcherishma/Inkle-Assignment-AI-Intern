@@ -10,7 +10,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 second timeout for Render free tier (wake-up time)
+  timeout: 60000, // 60 second timeout for Render free tier (wake-up can take 30-50 seconds)
 });
 
 export const tourismAPI = {

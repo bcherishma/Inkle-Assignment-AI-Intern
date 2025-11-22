@@ -20,6 +20,7 @@ export default function History() {
       // Silently fail for history - don't show error if backend is down
       console.error('Failed to load history:', error);
       setHistory([]); // Set empty array on error
+      // Don't show error to user - just show empty state
     } finally {
       setLoading(false);
     }

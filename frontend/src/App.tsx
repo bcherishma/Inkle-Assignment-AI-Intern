@@ -26,7 +26,7 @@ function App() {
       // Better error handling for network errors
       let errorMessage = 'Failed to process query';
       if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-        errorMessage = 'Request timed out. The backend might be waking up (free tier takes ~30-50 seconds). Please try again in a moment.';
+        errorMessage = 'Request timed out. The backend might be waking up (free tier takes ~30-60 seconds). Please try again in a moment.';
       } else if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
         errorMessage = 'Cannot connect to backend. Please check if the backend is running and the URL is correct.';
       } else if (err.response?.data?.detail) {

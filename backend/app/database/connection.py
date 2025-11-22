@@ -20,7 +20,7 @@ async def init_db(settings: Settings):
     db_path = _get_db_path(settings)
     logger.info(f"Initializing database: {db_path}")
     
-    async with await aiosqlite.connect(db_path) as db:
+    async with aiosqlite.connect(db_path) as db:
         # Create query_history table
         await db.execute("""
             CREATE TABLE IF NOT EXISTS query_history (

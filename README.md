@@ -40,35 +40,39 @@ A production-ready multi-agent tourism system that provides weather information 
 
 ```
 .
-├── app/                      # Backend application
-│   ├── __init__.py
-│   ├── main.py              # FastAPI application entry point
-│   ├── agents/
+├── backend/                  # Backend application
+│   ├── app/
 │   │   ├── __init__.py
-│   │   ├── parent_agent.py  # Tourism AI Agent (orchestrator)
-│   │   ├── weather_agent.py # Weather Agent
-│   │   └── places_agent.py  # Places Agent
-│   ├── clients/
-│   │   ├── __init__.py
-│   │   ├── geocoding_client.py  # Nominatim API client
-│   │   ├── weather_client.py    # Open-Meteo API client
-│   │   └── places_client.py     # Overpass API client
-│   ├── config/
-│   │   ├── __init__.py
-│   │   └── settings.py      # Application configuration
-│   ├── database/
-│   │   ├── __init__.py
-│   │   └── connection.py    # Database schema initialization
-│   ├── repositories/
-│   │   ├── __init__.py
-│   │   └── history_repository.py  # Repository Pattern for query history
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── base.py          # Base model classes
-│   │   └── schemas.py       # Pydantic request/response models
-│   └── utils/
-│       ├── __init__.py
-│       └── logger.py        # Logging configuration
+│   │   ├── main.py          # FastAPI application entry point
+│   │   ├── agents/
+│   │   │   ├── __init__.py
+│   │   │   ├── parent_agent.py  # Tourism AI Agent (orchestrator)
+│   │   │   ├── weather_agent.py # Weather Agent
+│   │   │   └── places_agent.py  # Places Agent
+│   │   ├── clients/
+│   │   │   ├── __init__.py
+│   │   │   ├── geocoding_client.py  # Nominatim API client
+│   │   │   ├── weather_client.py    # Open-Meteo API client
+│   │   │   └── places_client.py     # Overpass API client
+│   │   ├── config/
+│   │   │   ├── __init__.py
+│   │   │   └── settings.py      # Application configuration
+│   │   ├── database/
+│   │   │   ├── __init__.py
+│   │   │   └── connection.py    # Database schema initialization
+│   │   ├── repositories/
+│   │   │   ├── __init__.py
+│   │   │   └── history_repository.py  # Repository Pattern for query history
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py          # Base model classes
+│   │   │   └── schemas.py       # Pydantic request/response models
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       └── logger.py        # Logging configuration
+│   ├── requirements.txt      # Backend dependencies
+│   ├── run.py               # Run script
+│   └── README.md            # Backend documentation
 ├── frontend/                 # Frontend application
 │   ├── src/
 │   │   ├── components/      # React components
@@ -90,10 +94,10 @@ A production-ready multi-agent tourism system that provides weather information 
 │   └── tsconfig.json        # TypeScript configuration
 ├── .env.example
 ├── .gitignore
-├── requirements.txt         # Backend dependencies
 ├── Dockerfile
 ├── docker-compose.yml
-└── README.md
+├── README.md
+└── RUN.md                   # Quick start guide
 ```
 
 ## Installation
@@ -116,8 +120,8 @@ A production-ready multi-agent tourism system that provides weather information 
 
 3. **Backend Setup**:
    ```bash
-   cd backend  # If you have a backend directory, otherwise stay in root
-   # Create and activate virtual environment
+   cd backend
+   # Create and activate virtual environment (if not already created in root)
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    
@@ -150,8 +154,13 @@ A production-ready multi-agent tourism system that provides weather information 
    
    **Terminal 1 - Backend:**
    ```bash
-   # Make sure you're in the root directory with venv activated
-   python -m app.main
+   cd backend
+   # Make sure venv is activated
+   source ../venv/bin/activate  # or source venv/bin/activate if venv is in backend
+   
+   # Run using run.py (recommended)
+   python run.py
+   
    # Or using uvicorn directly:
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```

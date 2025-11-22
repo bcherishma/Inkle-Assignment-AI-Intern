@@ -18,10 +18,6 @@ class HistoryRepository:
     def __init__(self, db_path: str):
         self.db_path = db_path
     
-    async def _get_connection(self):
-        """Get database connection"""
-        return await aiosqlite.connect(self.db_path)
-    
     async def save_interaction(
         self,
         query: str,
@@ -36,7 +32,7 @@ class HistoryRepository:
         success: bool = True
     ) -> int:
         """Save a query interaction to the database"""
-        async with await self._get_connection() as db:
+        async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """INSERT INTO query_history 
                    (query, place_name, user_ip, has_weather, has_places, 
@@ -67,7 +63,7 @@ class HistoryRepository:
         days: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """Get recent query history"""
-        async with await self._get_connection() as db:
+        async with aiosqlite.connect(self.db_path) as db:
             query = """SELECT * FROM query_history"""
             params = []
             
@@ -100,7 +96,7 @@ class HistoryRepository:
         limit: int = 5
     ) -> List[Dict[str, Any]]:
         """Get query history for a specific place"""
-        async with await self._get_connection() as db:
+        async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """SELECT * FROM query_history 
                    WHERE place_name = ? 
@@ -123,7 +119,7 @@ class HistoryRepository:
     
     async def get_stats(self) -> Dict[str, Any]:
         """Get query statistics"""
-        async with await self._get_connection() as db:
+        async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute("SELECT COUNT(*) FROM query_history")
             total = (await cursor.fetchone())[0]
             

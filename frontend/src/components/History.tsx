@@ -16,8 +16,11 @@ export default function History() {
     try {
       const data = await tourismAPI.getHistory(10);
       setHistory(data);
-    } catch (error) {
-      console.error('Failed to load history:', error);
+    } catch (error: any) {
+      // Silently fail for history - don't show error if backend is down
+      if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error') {
+        console.error('Failed to load history:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -27,8 +30,11 @@ export default function History() {
     try {
       const data = await tourismAPI.getStats();
       setStats(data);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
+    } catch (error: any) {
+      // Silently fail for stats - don't show error if backend is down
+      if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error') {
+        console.error('Failed to load stats:', error);
+      }
     }
   };
 

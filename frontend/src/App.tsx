@@ -20,7 +20,15 @@ function App() {
       const result = await tourismAPI.query(request);
       setResponse(result);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || err.message || 'Failed to process query';
+      // Better error handling for network errors
+      let errorMessage = 'Failed to process query';
+      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+        errorMessage = 'Cannot connect to backend. Make sure the backend server is running on http://localhost:8000';
+      } else if (err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
       setError(errorMessage);
       setResponse({
         place_name: null,

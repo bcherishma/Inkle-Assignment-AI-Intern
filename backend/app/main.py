@@ -21,6 +21,7 @@ load_dotenv()
 settings = Settings()
 logger = setup_logger(__name__, level=settings.log_level)
 
+# Global dependency objects
 geocoding_client: GeocodingClient = None
 weather_client: WeatherClient = None
 places_client: PlacesClient = None
@@ -37,12 +38,15 @@ async def lifespan(app: FastAPI):
 
     logger.info(f"Starting {settings.app_name} v{settings.app_version}...")
 
+    # Initialize SQLite database
     await init_db(settings)
 
+    # Resolve DB path
     db_path = _get_db_path(settings)
     logger.info(f"Database path: {db_path}")
     history_repository = HistoryRepository(db_path)
 
+    # Initialize API clients
     geocoding_client = GeocodingClient(
         base_url=settings.nominatim_base_url,
         user_agent=settings.user_agent
@@ -50,6 +54,7 @@ async def lifespan(app: FastAPI):
     weather_client = WeatherClient(base_url=settings.open_meteo_base_url)
     places_client = PlacesClient(base_url=settings.overpass_base_url)
 
+    # Agents
     weather_agent = WeatherAgent(geocoding_client, weather_client)
     places_agent = PlacesAgent(geocoding_client, places_client)
     tourism_agent = TourismAIAgent(weather_agent, places_agent)
@@ -58,13 +63,13 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    # Shutdown gracefully
     logger.info("Shutting down Tourism AI Multi-Agent System...")
     await geocoding_client.close()
     await weather_client.close()
     await places_client.close()
     await close_db()
     logger.info("Shutdown complete.")
-
 
 app = FastAPI(
     title=settings.app_name,
@@ -76,19 +81,18 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        # Local dev
+        # Local development
         "http://localhost:5173",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
 
-        # Render frontend URL
-        "https://YOUR-RENDER-FRONTEND-URL",
+        # Render Frontend (YOUR ACTUAL URL)
+        "https://wanderwise-frontend-9zer.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
 
 @app.get("/")
@@ -99,11 +103,11 @@ async def root():
         "endpoints": {
             "/query": "POST - Query tourism information",
             "/health": "GET - Health check",
-            "/history": "GET - Get recent query history",
-            "/history/stats": "GET - Get query statistics",
-            "/history/place/{place_name}": "GET - Get history for a specific place",
+            "/history": "GET - Recent query history",
+            "/history/stats": "GET - Query statistics",
+            "/history/place/{place_name}": "GET - History for a specific place",
             "/docs": "Swagger UI",
-            "/redoc": "ReDoc UI",
+            "/redoc": "ReDoc UI"
         }
     }
 
@@ -163,9 +167,9 @@ async def get_place_history(place_name: str, limit: int = 5):
         raise HTTPException(status_code=500, detail=f"Error fetching place history: {str(e)}")
 
 
-# Preflight for /query
 @app.options("/query")
 async def options_query():
+    """Handle CORS preflight"""
     return {"message": "OK"}
 
 
@@ -184,6 +188,7 @@ async def query_tourism(request: TourismRequest, http_request: Request):
             place_name=request.place
         )
 
+        # Save history
         if history_repository:
             try:
                 history_id = await history_repository.save_interaction(
@@ -202,7 +207,6 @@ async def query_tourism(request: TourismRequest, http_request: Request):
             except Exception as db_error:
                 logger.error(f"Failed to save query history: {db_error}", exc_info=True)
 
-        logger.info(f"Query processed successfully for: {response.place_name}")
         return response
 
     except HTTPException:

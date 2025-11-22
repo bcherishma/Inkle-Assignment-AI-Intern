@@ -21,6 +21,17 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: process.env.PORT ? parseInt(process.env.PORT) : 4173,
+    // Allow all hosts for preview (production build)
+    allowedHosts: [
+      'localhost',
+      '.onrender.com',
+      '.railway.app',
+      '.vercel.app'
+    ]
   }
 })
 

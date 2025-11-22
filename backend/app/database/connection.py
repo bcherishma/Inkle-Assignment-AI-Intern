@@ -9,10 +9,20 @@ def _get_db_path(settings: Settings) -> str:
     """Extract database path from settings"""
     db_url = settings.database_url
     if db_url.startswith("sqlite+aiosqlite:///"):
-        return db_url.replace("sqlite+aiosqlite:///", "")
+        db_path = db_url.replace("sqlite+aiosqlite:///", "")
     elif db_url.startswith("sqlite:///"):
-        return db_url.replace("sqlite:///", "")
-    return db_url
+        db_path = db_url.replace("sqlite:///", "")
+    else:
+        db_path = db_url
+    
+    if db_path.startswith("./"):
+        import os
+        current_file = os.path.abspath(__file__)
+        app_dir = os.path.dirname(current_file)
+        backend_dir = os.path.dirname(app_dir)
+        db_path = os.path.join(backend_dir, db_path[2:])
+    
+    return db_path
 
 
 async def init_db(settings: Settings):
@@ -21,7 +31,6 @@ async def init_db(settings: Settings):
     logger.info(f"Initializing database: {db_path}")
     
     async with aiosqlite.connect(db_path) as db:
-        # Create query_history table
         await db.execute("""
             CREATE TABLE IF NOT EXISTS query_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

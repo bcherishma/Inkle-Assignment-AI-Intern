@@ -23,23 +23,97 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-color);
+  /* Travel Cartoon Blue Banner Background - vibrant travel theme */
+  /* Inspired by travel cartoon blue banner with sky and ocean tones */
+  background: linear-gradient(135deg, 
+    #B0E0E6 0%,      /* Powder blue - top (sky) */
+    #87CEEB 15%,     /* Sky blue */
+    #6BB6FF 30%,     /* Bright blue */
+    #4A90E2 50%,     /* Ocean blue - middle */
+    #5B9BD5 70%,     /* Deep blue */
+    #6BB6FF 85%,     /* Bright blue */
+    #87CEEB 100%     /* Sky blue - bottom */
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 20s ease infinite;
   color: var(--text-primary);
   line-height: 1.6;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  
+  /* If you have the travel-background.png image, uncomment this: */
+  /* background-image: url('/images/travel-background.png'); */
+  /* background-size: cover; */
+  /* background-position: center; */
+  /* background-repeat: no-repeat; */
+  /* background-attachment: fixed; */
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    /* Travel-themed decorative elements - clouds and sky patterns */
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 35%),
+    radial-gradient(circle at 90% 40%, rgba(255, 255, 255, 0.35) 0%, transparent 40%),
+    radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 45%),
+    radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.25) 0%, transparent 50%),
+    /* Subtle wave patterns for travel theme */
+    linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.15) 30%, rgba(255, 255, 255, 0.1) 70%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+  animation: float 25s ease-in-out infinite;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  background: linear-gradient(to top, 
+    rgba(70, 130, 180, 0.3) 0%,
+    rgba(135, 206, 235, 0.2) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
 }
 
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .app-header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.95) 0%, rgba(30, 64, 175, 0.95) 100%);
+  backdrop-filter: blur(10px);
   color: white;
   padding: 2rem;
   text-align: center;
   box-shadow: var(--shadow-lg);
+  position: relative;
+  z-index: 2;
 }
 
 .app-header h1 {
@@ -58,6 +132,8 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  position: relative;
+  z-index: 2;
 }
 
 .main-content {
@@ -79,10 +155,12 @@ body {
 }
 
 .query-form {
-  background: var(--card-bg);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .form-container {
@@ -186,11 +264,13 @@ body {
 }
 
 .results {
-  background: var(--card-bg);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-lg);
   min-height: 200px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .results.loading {
@@ -297,12 +377,14 @@ body {
 }
 
 .history-section {
-  background: var(--card-bg);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-lg);
   max-height: calc(100vh - 200px);
   overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .history {
@@ -417,11 +499,14 @@ body {
 }
 
 .app-footer {
-  background: var(--card-bg);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   padding: 1.5rem;
   text-align: center;
   color: var(--text-secondary);
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 2;
 }
 
 @media (max-width: 768px) {

@@ -1,4 +1,3 @@
-# FastAPI application for Tourism AI Multi-Agent System
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,19 +13,16 @@ from app.agents.places_agent import PlacesAgent
 from app.agents.parent_agent import TourismAIAgent
 from app.utils.logger import setup_logger
 from app.database import init_db, close_db
+from app.database.connection import _get_db_path
 from app.repositories.history_repository import HistoryRepository
 
-# Load environment variables
 load_dotenv()
 
-# Initialize settings
 settings = Settings()
 
-# Setup logger
 logger = setup_logger(__name__, level=settings.log_level)
 
 
-# Global clients and agents
 geocoding_client: GeocodingClient = None
 weather_client: WeatherClient = None
 places_client: PlacesClient = None
@@ -38,25 +34,18 @@ history_repository: HistoryRepository = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup and shutdown
     global geocoding_client, weather_client, places_client
     global weather_agent, places_agent, tourism_agent, history_repository
     
     logger.info(f"Starting {settings.app_name} v{settings.app_version}...")
     
-    # Initialize database schema
     await init_db(settings)
     
-    # Initialize repository (Repository Pattern)
-    # Extract database path from settings
-    db_path = settings.database_url
-    if db_path.startswith("sqlite+aiosqlite:///"):
-        db_path = db_path.replace("sqlite+aiosqlite:///", "")
-    elif db_path.startswith("sqlite:///"):
-        db_path = db_path.replace("sqlite:///", "")
+    # Use the same path resolution function as init_db
+    db_path = _get_db_path(settings)
+    logger.info(f"Database path: {db_path}")
     history_repository = HistoryRepository(db_path)
     
-    # Initialize clients
     geocoding_client = GeocodingClient(
         base_url=settings.nominatim_base_url,
         user_agent=settings.user_agent
@@ -64,7 +53,6 @@ async def lifespan(app: FastAPI):
     weather_client = WeatherClient(base_url=settings.open_meteo_base_url)
     places_client = PlacesClient(base_url=settings.overpass_base_url)
     
-    # Initialize agents
     weather_agent = WeatherAgent(geocoding_client, weather_client)
     places_agent = PlacesAgent(geocoding_client, places_client)
     tourism_agent = TourismAIAgent(weather_agent, places_agent)
@@ -73,7 +61,6 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    # Cleanup
     logger.info("Shutting down Tourism AI Multi-Agent System...")
     await geocoding_client.close()
     await weather_client.close()
@@ -82,7 +69,6 @@ async def lifespan(app: FastAPI):
     logger.info("Shutdown complete.")
 
 
-# Create FastAPI app
 app = FastAPI(
     title=settings.app_name,
     description=settings.app_description,
@@ -90,7 +76,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -100,8 +85,9 @@ app.add_middleware(
         "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 @app.get("/")
@@ -177,6 +163,12 @@ async def get_place_history(place_name: str, limit: int = 5):
         raise HTTPException(status_code=500, detail=f"Error fetching place history: {str(e)}")
 
 
+@app.options("/query")
+async def options_query():
+    """Handle CORS preflight for /query endpoint"""
+    return {"message": "OK"}
+
+
 @app.post("/query", response_model=TourismResponse)
 async def query_tourism(request: TourismRequest, http_request: Request):
     """Main endpoint for tourism queries"""
@@ -187,19 +179,16 @@ async def query_tourism(request: TourismRequest, http_request: Request):
             logger.error("Tourism agent not initialized")
             raise HTTPException(status_code=503, detail="Service not initialized")
         
-        # Get user IP for tracking
         user_ip = http_request.client.host if http_request.client else None
         
-        # Process query
         response = await tourism_agent.process_query(
             query=request.query,
             place_name=request.place
         )
         
-        # Store query history using Repository Pattern
         if history_repository:
             try:
-                await history_repository.save_interaction(
+                history_id = await history_repository.save_interaction(
                     query=request.query,
                     place_name=response.place_name,
                     user_ip=user_ip,
@@ -211,9 +200,9 @@ async def query_tourism(request: TourismRequest, http_request: Request):
                     error=response.error,
                     success=response.success
                 )
+                logger.info(f"Saved query history with ID: {history_id}")
             except Exception as db_error:
-                logger.warning(f"Failed to save query history: {db_error}")
-                # Don't fail the request if history saving fails
+                logger.error(f"Failed to save query history: {db_error}", exc_info=True)
         
         logger.info(f"Query processed successfully for: {response.place_name}")
         return response

@@ -18,7 +18,6 @@ def setup_logger(name: str, level: Optional[str] = None) -> logging.Logger:
     Returns:
         Configured logger instance
     """
-    # Get log level from env or parameter
     if level is None:
         level = os.getenv("LOG_LEVEL", "INFO").upper()
     
@@ -26,15 +25,12 @@ def setup_logger(name: str, level: Optional[str] = None) -> logging.Logger:
     log_level = getattr(logging, level, logging.INFO)
     logger.setLevel(log_level)
     
-    # Avoid duplicate handlers
     if logger.handlers:
         return logger
     
-    # Create console handler
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(log_level)
     
-    # Create formatter
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'

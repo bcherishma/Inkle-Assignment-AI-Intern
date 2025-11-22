@@ -6,8 +6,15 @@ changing only this file.
 
 import aiosqlite
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.utils.logger import setup_logger
+
+# Indian Standard Time (IST) is UTC+5:30
+IST = timezone(timedelta(hours=5, minutes=30))
+
+def get_ist_now() -> datetime:
+    """Get current time in Indian Standard Time"""
+    return datetime.now(IST)
 
 logger = setup_logger(__name__)
 
@@ -32,30 +39,37 @@ class HistoryRepository:
         success: bool = True
     ) -> int:
         """Save a query interaction to the database"""
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute(
-                """INSERT INTO query_history 
-                   (query, place_name, user_ip, has_weather, has_places, 
-                    weather_temp, weather_rain_prob, places_count, error, success, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    query,
-                    place_name,
-                    user_ip,
-                    1 if has_weather else 0,
-                    1 if has_places else 0,
-                    weather_temp,
-                    weather_rain_prob,
-                    places_count,
-                    error,
-                    1 if success else 0,
-                    datetime.utcnow().isoformat()
+        try:
+            logger.info(f"Saving query history: query='{query[:50]}...', place='{place_name}', db_path='{self.db_path}'")
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    """INSERT INTO query_history 
+                       (query, place_name, user_ip, has_weather, has_places, 
+                        weather_temp, weather_rain_prob, places_count, error, success, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        query,
+                        place_name,
+                        user_ip,
+                        1 if has_weather else 0,
+                        1 if has_places else 0,
+                        weather_temp,
+                        weather_rain_prob,
+                        places_count,
+                        error,
+                        1 if success else 0,
+                        get_ist_now().isoformat()
+                    )
                 )
-            )
-            await db.commit()
-            cursor = await db.execute("SELECT last_insert_rowid()")
-            row = await cursor.fetchone()
-            return row[0] if row else None
+                await db.commit()
+                cursor = await db.execute("SELECT last_insert_rowid()")
+                row = await cursor.fetchone()
+                history_id = row[0] if row else None
+                logger.info(f"Successfully saved query history with ID: {history_id}")
+                return history_id
+        except Exception as e:
+            logger.error(f"Error saving query history to {self.db_path}: {e}", exc_info=True)
+            raise
     
     async def get_recent(
         self,
@@ -68,7 +82,7 @@ class HistoryRepository:
             params = []
             
             if days:
-                cutoff_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
+                cutoff_date = (get_ist_now() - timedelta(days=days)).isoformat()
                 query += " WHERE created_at >= ?"
                 params.append(cutoff_date)
             

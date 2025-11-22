@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     
     # Server Configuration
     api_host: str = os.getenv("API_HOST", "0.0.0.0")
-    api_port: int = int(os.getenv("API_PORT", "8000"))
+    # Railway uses PORT env var, fallback to API_PORT or 8000
+    api_port: int = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))
     
     # Logging
     log_level: str = os.getenv("LOG_LEVEL", "INFO")

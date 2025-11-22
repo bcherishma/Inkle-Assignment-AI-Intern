@@ -1,9 +1,9 @@
-version: '3.8'
-
 services:
-  tourism-ai:
-    build: .
-    container_name: tourism-ai-system
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tourism-ai-backend
     ports:
       - "8000:8000"
     environment:
@@ -16,7 +16,7 @@ services:
       - LOG_LEVEL=INFO
       - DATABASE_URL=sqlite+aiosqlite:///./tourism_ai.db
     volumes:
-      - ./tourism_ai.db:/app/tourism_ai.db
+      - tourism_db:/app/backend
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
@@ -25,3 +25,20 @@ services:
       retries: 3
       start_period: 40s
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tourism-ai-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # For Docker, frontend runs in browser, so it needs to access backend via localhost
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  tourism_db:

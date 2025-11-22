@@ -10,6 +10,7 @@ function App() {
   const [response, setResponse] = useState<TourismResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const handleSubmit = async (request: TourismRequest) => {
     setIsLoading(true);
@@ -19,6 +20,8 @@ function App() {
     try {
       const result = await tourismAPI.query(request);
       setResponse(result);
+      // Refresh history after successful query
+      setHistoryRefreshKey(prev => prev + 1);
     } catch (err: any) {
       // Better error handling for network errors
       let errorMessage = 'Failed to process query';
@@ -63,7 +66,7 @@ function App() {
           </section>
 
           <aside className="history-section">
-            <History />
+            <History key={historyRefreshKey} />
           </aside>
         </div>
       </main>

@@ -4,6 +4,50 @@ A production-ready multi-agent tourism system that provides weather information 
 
 ## Architecture
 
+### System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      User Query                              │
+│         "I'm going to Bangalore, what's the weather?"        │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Parent Agent (TourismAIAgent)                 │
+│  • Extracts place name from natural language                │
+│  • Parses user intent (weather/places/both)                │
+│  • Orchestrates child agents                                │
+└──────┬──────────────────────────────┬───────────────────────┘
+       │                              │
+       ▼                              ▼
+┌──────────────────┐        ┌──────────────────┐
+│  Weather Agent    │        │   Places Agent   │
+│  • Geocoding      │        │   • Geocoding    │
+│  • Weather API    │        │   • Places API   │
+└──────┬────────────┘        └──────┬───────────┘
+       │                             │
+       ▼                             ▼
+┌──────────────────┐        ┌──────────────────┐
+│  Open-Meteo API  │        │  Overpass API     │
+│  (Weather Data)   │        │  (Tourist Places) │
+└──────────────────┘        └───────────────────┘
+       │                             │
+       └─────────────┬───────────────┘
+                     ▼
+        ┌────────────────────────┐
+        │   Response Aggregation │
+        │   + Query History      │
+        └────────────┬───────────┘
+                     │
+                     ▼
+        ┌────────────────────────┐
+        │      User Response     │
+        └────────────────────────┘
+```
+
+### Component Overview
+
 - **Parent Agent**: Tourism AI Agent (orchestrates the system)
 - **Child Agent 1**: Weather Agent (fetches current/forecast weather using Open-Meteo API)
 - **Child Agent 2**: Places Agent (suggests up to 5 tourist attractions using Overpass API)
@@ -35,6 +79,28 @@ A production-ready multi-agent tourism system that provides weather information 
 - **TypeScript** - Type-safe JavaScript
 - **Vite** - Fast build tool and dev server
 - **Axios** - HTTP client for API calls
+
+## 🐳 Docker Deployment
+
+### Quick Start
+
+```bash
+# Build and start all services
+docker-compose up -d --build
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+```
+
+**Access:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+For detailed deployment instructions, see [DOCKER_GUIDE.md](./DOCKER_GUIDE.md) or [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Project Structure
 
@@ -303,6 +369,153 @@ curl http://localhost:8000/history/place/Bangalore
 
 ## Example Responses
 
+## 📡 API Examples
+
+### Using cURL
+
+#### Example 1: Get Weather and Places
+```bash
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "I am going to Bangalore, what is the temperature there? And what are the places I can visit?"
+  }'
+```
+
+**Response:**
+```json
+{
+  "place_name": "Bangalore",
+  "weather": {
+    "temperature": 24.0,
+    "rain_probability": 35.0,
+    "place_name": "Bangalore"
+  },
+  "places": [
+    {"name": "Lalbagh", "type": "Park", "description": null},
+    {"name": "Bangalore Palace", "type": "Historic", "description": null},
+    {"name": "Cubbon Park", "type": "Park", "description": null},
+    {"name": "Bannerghatta National Park", "type": "Park", "description": null},
+    {"name": "Jawaharlal Nehru Planetarium", "type": "Museum", "description": null}
+  ],
+  "message": "In Bangalore it's currently 24°C with a chance of 35% to rain. And these are the places you can go: Lalbagh, Bangalore Palace, Cubbon Park, Bannerghatta National Park, Jawaharlal Nehru Planetarium",
+  "success": true
+}
+```
+
+#### Example 2: Get Weather Only
+```bash
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is the temperature in Paris?"
+  }'
+```
+
+**Response:**
+```json
+{
+  "place_name": "Paris",
+  "weather": {
+    "temperature": 18.5,
+    "rain_probability": 20.0,
+    "place_name": "Paris"
+  },
+  "places": null,
+  "message": "In Paris it's currently 18.5°C with a chance of 20% to rain.",
+  "success": true
+}
+```
+
+#### Example 3: Get Places Only
+```bash
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What places can I visit in Mumbai?"
+  }'
+```
+
+#### Example 4: Get Query History
+```bash
+curl http://localhost:8000/history?limit=10
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 10,
+  "history": [
+    {
+      "id": 1,
+      "query": "I'm going to Bangalore",
+      "place_name": "Bangalore",
+      "has_weather": true,
+      "has_places": true,
+      "created_at": "2025-11-22T22:40:09"
+    }
+  ]
+}
+```
+
+#### Example 5: Get Statistics
+```bash
+curl http://localhost:8000/history/stats
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "stats": {
+    "total_queries": 150,
+    "successful_queries": 145,
+    "unique_places": 45
+  }
+}
+```
+
+### Using Python
+
+```python
+import requests
+
+# Query for weather and places
+response = requests.post(
+    "http://localhost:8000/query",
+    json={"query": "I'm going to Bangalore, what's the weather and places?"}
+)
+data = response.json()
+print(data["message"])
+
+# Get query history
+history = requests.get("http://localhost:8000/history?limit=5")
+print(history.json())
+```
+
+### Using JavaScript/TypeScript
+
+```typescript
+// Query for weather and places
+const response = await fetch('http://localhost:8000/query', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    query: "I'm going to Bangalore, what's the weather and places?"
+  })
+});
+const data = await response.json();
+console.log(data.message);
+
+// Get query history
+const history = await fetch('http://localhost:8000/history?limit=5');
+const historyData = await history.json();
+console.log(historyData);
+```
+
+## 📝 Example Queries
+
 ### Example 1: Places Only
 **Input**: "I'm going to go to Bangalore, let's plan my trip."
 
@@ -373,7 +586,7 @@ I implemented the **Repository Pattern** to separate business logic from databas
   - The rest of the application doesn't know we use SQLite
   - Easy to swap SQLite for MongoDB/PostgreSQL by changing only `app/repositories/history_repository.py`
   - Clean separation of concerns
-  - Testable and maintainable
+  - Maintainable and scalable
 
 - **Location**: `app/repositories/history_repository.py`
 
@@ -391,34 +604,6 @@ If a place doesn't exist or can't be found:
   "weather": null,
   "places": null
 }
-```
-
-## Testing
-
-### Manual Testing with curl
-
-```bash
-# Test query endpoint
-curl -X POST "http://localhost:8000/query" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "I'\''m going to go to Bangalore, let'\''s plan my trip."
-  }'
-
-# Test health check
-curl http://localhost:8000/health
-```
-
-### Testing with Python
-
-```python
-import httpx
-
-response = httpx.post(
-    "http://localhost:8000/query",
-    json={"query": "I'm going to go to Bangalore, what is the temperature there?"}
-)
-print(response.json())
 ```
 
 ## Production Deployment
@@ -479,7 +664,7 @@ heroku container:release web
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
+4. Submit a pull request
 5. Submit a pull request
 
 ## License

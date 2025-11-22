@@ -21,14 +21,26 @@ class TourismAIAgent:
     def _extract_place_name(self, query: str) -> Optional[str]:
         query_clean = query.strip()
         
-        # Common words to skip
-        skip_words = {'the', 'and', 'or', 'can', 'what', 'where', 'how', 'when', 'why', 'is', 'are', 'will', 'want', 'to', 'in', 'at', 'for', 'my', 'i', 'me', 'we', 'our', 'a', 'an'}
-        skip_words_upper = {w.capitalize() for w in skip_words} | {'The', 'And', 'Or', 'Can', 'What', 'Where', 'How', 'When', 'Why', 'I', 'My', 'Me', 'We', 'Our'}
+        skip_words = {'the', 'and', 'or', 'can', 'what', 'where', 'how', 'when', 'why', 'is', 'are', 'will', 'want', 'to', 'in', 'at', 'for', 'my', 'i', 'me', 'we', 'our', 'a', 'an', 'go', 'going', 'give', 'me', 'tour', 'plan', 'show', 'tell', 'get', 'find', 'search', 'look'}
+        skip_words_upper = {w.capitalize() for w in skip_words} | {'The', 'And', 'Or', 'Can', 'What', 'Where', 'How', 'When', 'Why', 'I', 'My', 'Me', 'We', 'Our', 'Go', 'Going', 'Give', 'Tour', 'Plan', 'Show', 'Tell', 'Get', 'Find', 'Search', 'Look'}
+        
+        if re.search(r'going\s+to\s+go\s+to\s+([A-Z][a-zA-Z]{2,})', query_clean, re.IGNORECASE):
+            match = re.search(r'going\s+to\s+go\s+to\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*?)(?:,|\s+let|\s+what|\s+temperature|\s+places|\s+and|\s+can|\s+are|\s*\?|$)', query_clean, re.IGNORECASE)
+            if match:
+                place = match.group(1).strip().rstrip('.,!?;:')
+                if place and len(place) > 2 and place.lower() not in skip_words:
+                    return place
         
         patterns = [
-            r'(?:going\s+to|traveling\s+to|travelling\s+to|travel\s+to|visit|visiting|visits|want\s+to\s+visit|plan\s+to\s+visit)\s+([A-Z][a-zA-Z\s]{2,}?)(?:,|\s+let|\s+what|\s+temperature|\s+places|\s+and|\s+)',
-            r'(?:in|at)\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*?)(?:\s*,|\s+let|\s+what|\s+temperature|\s+places|\s+the|\s+is|\s+are|\s*\?|$)',
-            r'to\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*?)(?:\s*,|\s+let|\s+what|\s+temperature|\s+places|\s+)',
+            # Pattern: "for [Place]" - high priority for queries like "Give me tour plan for Hyderabad"
+            r'(?:for|about|around|near)\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*?)(?:\s*,|\s+let|\s+what|\s+temperature|\s+places|\s+the|\s+is|\s+are|\s+can|\s+plan|\s+tour|\s*\?|$)',
+            # Pattern: "going to [Place]" or "traveling to [Place]"
+            r'(?:going\s+to|traveling\s+to|travelling\s+to|travel\s+to|visit|visiting|visits|want\s+to\s+visit|plan\s+to\s+visit)\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*?)(?:,|\s+let|\s+what|\s+temperature|\s+places|\s+and|\s+can|\s+are|\s*\?|$)',
+            # Pattern: "in [Place]" or "at [Place]"
+            r'(?:in|at)\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*?)(?:\s*,|\s+let|\s+what|\s+temperature|\s+places|\s+the|\s+is|\s+are|\s+can|\s*\?|$)',
+            # Pattern: "to [Place]" (but not "go to" or "going to")
+            r'(?<!go\s)(?<!going\s)to\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*?)(?:\s*,|\s+let|\s+what|\s+temperature|\s+places|\s+can|\s+are|\s*\?|$)',
+            # Pattern: "place/city/location is/called/named/in"
             r'(?:place|city|location)\s+(?:is|called|named|in)\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*?)(?:\s*,|\s+|$)',
         ]
         
@@ -44,15 +56,21 @@ class TourismAIAgent:
                         if w.lower() not in skip_words and w.rstrip('.,!?') not in skip_words_upper:
                             filtered.append(w.rstrip('.,!?'))
                     if filtered:
-                        return ' '.join(filtered)
+                        result = ' '.join(filtered)
+                        result_lower = result.lower()
+                        if result_lower not in skip_words and len(result) > 2:
+                            if len(filtered) == 1 and result_lower in ['give', 'go', 'show', 'tell', 'get', 'find', 'tour', 'plan']:
+                                continue
+                            return result
         
-        # Split into sentences and look for capitalized words
         sentences = re.split(r'[.!?]\s+', query_clean)
         for sentence in sentences:
             words = sentence.split()
             capitalized_places = []
             for i, word in enumerate(words):
                 cleaned = word.rstrip('.,!?;:')
+                if i == 0 and cleaned.lower() in ['give', 'show', 'tell', 'get', 'find', 'search', 'look']:
+                    continue
                 if cleaned and cleaned[0].isupper() and len(cleaned) > 2:
                     if cleaned not in skip_words_upper:
                         capitalized_places.append(cleaned)
@@ -66,7 +84,10 @@ class TourismAIAgent:
                                 break
                         if capitalized_places:
                             result = ' '.join(capitalized_places)
-                            if result.lower() not in skip_words and len(result) > 2:
+                            result_lower = result.lower()
+                            if result_lower not in skip_words and len(result) > 2:
+                                if len(capitalized_places) == 1 and result_lower in ['give', 'go', 'show', 'tell', 'get', 'find', 'tour', 'plan']:
+                                    continue
                                 return result
                         capitalized_places = []
         
@@ -74,12 +95,17 @@ class TourismAIAgent:
         candidates = []
         for word in words:
             cleaned = word.rstrip('.,!?;:')
-            if cleaned and cleaned[0].isupper() and len(cleaned) > 2 and cleaned not in skip_words_upper:
-                candidates.append(cleaned)
+            cleaned_lower = cleaned.lower()
+            if cleaned and cleaned[0].isupper() and len(cleaned) > 2:
+                if cleaned not in skip_words_upper and cleaned_lower not in skip_words:
+                    if cleaned_lower not in ['give', 'go', 'show', 'tell', 'get', 'find', 'tour', 'plan']:
+                        candidates.append(cleaned)
         
         if candidates:
             if len(candidates) > 1 or (len(candidates) == 1 and not query_clean[0].isupper()):
-                return ' '.join(candidates[:3])
+                result = ' '.join(candidates[:3])
+                if result.lower() not in skip_words:
+                    return result
         
         return None
     
@@ -172,14 +198,14 @@ class TourismAIAgent:
                             place_name=place_name,
                             weather=weather_result,
                             places=[],
-                            message=f"In {place_name} it's currently {weather_result.temperature:.0f}°C with a chance of {weather_result.rain_probability:.0f}% to rain. I couldn't fetch tourist attractions at the moment (the places API might be slow or unavailable)."
+                            message=f"In {place_name} it's currently {weather_result.temperature:.0f}°C with a chance of {weather_result.rain_probability:.0f}% to rain. I couldn't find tourist attractions nearby - the places API might be slow or there might not be many tagged attractions in OpenStreetMap for this location."
                         )
                     return TourismResponse(
                         success=True,
                         place_name=place_name,
                         weather=weather_result,
                         places=[],
-                        message=f"In {place_name} I couldn't find any tourist attractions nearby, or the places API is currently unavailable."
+                        message=f"In {place_name} I couldn't find any tourist attractions nearby. The places API might be slow or there might not be many tagged attractions in OpenStreetMap for this location."
                     )
             
             message_parts = []

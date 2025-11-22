@@ -4,11 +4,11 @@ React + TypeScript frontend for the Tourism AI Multi-Agent System.
 
 ## Features
 
-- 🎨 Modern, responsive UI
-- 🔄 Real-time query processing
-- 📊 Query history and statistics
-- 🎯 Example queries for quick testing
-- 💾 Persistent query history
+-  Modern, responsive UI
+-  Real-time query processing
+-  Query history and statistics
+-  Example queries for quick testing
+-  Persistent query history
 
 ## Tech Stack
 

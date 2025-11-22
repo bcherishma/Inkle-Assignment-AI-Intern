@@ -14,6 +14,9 @@ services:
       - API_HOST=0.0.0.0
       - API_PORT=8000
       - LOG_LEVEL=INFO
+      - DATABASE_URL=sqlite+aiosqlite:///./tourism_ai.db
+    volumes:
+      - ./tourism_ai.db:/app/tourism_ai.db
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]

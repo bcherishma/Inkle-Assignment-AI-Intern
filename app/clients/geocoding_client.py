@@ -1,4 +1,3 @@
-# Geocoding using Nominatim API
 import httpx
 from typing import Optional
 from app.models.schemas import LocationResponse
@@ -14,7 +13,7 @@ class GeocodingClient:
         self.client = httpx.AsyncClient(timeout=10.0, headers={"User-Agent": self.user_agent})
     
     async def get_coordinates(self, place_name: str) -> Optional[LocationResponse]:
-        # Get lat/long for a place name
+        # We get the latitude/longitude for a place name
         try:
             params = {"q": place_name, "format": "json", "limit": 1, "addressdetails": 1}
             response = await self.client.get(self.base_url, params=params)

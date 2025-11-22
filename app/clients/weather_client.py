@@ -1,4 +1,3 @@
-# Weather API client using Open-Meteo
 import httpx
 from typing import Optional
 from app.models.schemas import WeatherResponse

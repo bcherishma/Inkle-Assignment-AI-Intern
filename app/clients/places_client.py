@@ -1,4 +1,3 @@
-# Places API client using Overpass
 import httpx
 from typing import List
 from app.models.schemas import PlaceInfo
@@ -10,12 +9,9 @@ logger = setup_logger(__name__)
 class PlacesClient:
     def __init__(self, base_url: str = "https://overpass-api.de/api/interpreter"):
         self.base_url = base_url
-        # Timeout set to 45s (API can be slow, but query timeout is 20s)
         self.client = httpx.AsyncClient(timeout=45.0)
     
     def _build_overpass_query(self, latitude: float, longitude: float, radius: int = 8000, limit: int = 5) -> str:
-        # Simplified query for faster results - focus on most common tourist types
-        # Using union to combine results efficiently
         query = f"""[out:json][timeout:20];
 (
   node["tourism"]["name"](around:{radius},{latitude},{longitude});
@@ -36,7 +32,6 @@ out center {limit};"""
             
             data = response.json()
             
-            # Check if Overpass returned an error
             if "remark" in data and "error" in data.get("remark", "").lower():
                 logger.error(f"Places API error: {data.get('remark')}")
                 return []
@@ -54,7 +49,7 @@ out center {limit};"""
                     continue
                 
                 seen_names.add(name)
-                # Get place type from various tags
+                # We can get place type from the various tags
                 place_type = (
                     tags.get("tourism") or 
                     tags.get("historic") or 

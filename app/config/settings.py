@@ -1,8 +1,5 @@
-"""Application settings and configuration"""
-
 import os
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -31,6 +28,13 @@ class Settings(BaseSettings):
     
     # Logging
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    
+    # Database Configuration
+    database_url: str = os.getenv(
+        "DATABASE_URL",
+        "sqlite+aiosqlite:///./tourism_ai.db"
+    )
+    database_echo: bool = os.getenv("DATABASE_ECHO", "False").lower() == "true"
     
     # Application Info
     app_name: str = "Tourism AI Multi-Agent System"

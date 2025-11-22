@@ -1,4 +1,3 @@
-# Weather Agent - Child Agent 1
 from typing import Optional
 from app.models.schemas import WeatherResponse
 from app.clients.geocoding_client import GeocodingClient
@@ -14,7 +13,7 @@ class WeatherAgent:
         self.weather_client = weather_client
     
     async def get_weather_info(self, place_name: str) -> Optional[WeatherResponse]:
-        # Get coordinates first, then weather
+        # Gets coordinates first and then weather
         location = await self.geocoding_client.get_coordinates(place_name)
         if not location:
             return None

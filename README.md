@@ -19,6 +19,7 @@ A production-ready multi-agent tourism system that provides weather information 
 
 ## Tech Stack
 
+### Backend
 - **Python 3.11+** - Modern Python with async/await support
 - **FastAPI** - Modern, fast web framework with automatic API documentation
 - **Pydantic** - Data validation and settings management
@@ -29,11 +30,17 @@ A production-ready multi-agent tourism system that provides weather information 
 - **Overpass API** - OpenStreetMap query API for tourist attractions
 - **Nominatim API** - OpenStreetMap geocoding (place name to coordinates)
 
+### Frontend
+- **React 18** - Modern UI library
+- **TypeScript** - Type-safe JavaScript
+- **Vite** - Fast build tool and dev server
+- **Axios** - HTTP client for API calls
+
 ## Project Structure
 
 ```
 .
-├── app/
+├── app/                      # Backend application
 │   ├── __init__.py
 │   ├── main.py              # FastAPI application entry point
 │   ├── agents/
@@ -62,9 +69,28 @@ A production-ready multi-agent tourism system that provides weather information 
 │   └── utils/
 │       ├── __init__.py
 │       └── logger.py        # Logging configuration
+├── frontend/                 # Frontend application
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   │   ├── QueryForm.tsx
+│   │   │   ├── Results.tsx
+│   │   │   └── History.tsx
+│   │   ├── services/        # API service layer
+│   │   │   └── api.ts
+│   │   ├── types/           # TypeScript type definitions
+│   │   │   └── index.ts
+│   │   ├── App.tsx          # Main app component
+│   │   ├── App.css          # App styles
+│   │   ├── main.tsx         # React entry point
+│   │   └── index.css        # Global styles
+│   ├── public/              # Static assets
+│   ├── index.html           # HTML template
+│   ├── package.json         # Frontend dependencies
+│   ├── vite.config.ts       # Vite configuration
+│   └── tsconfig.json        # TypeScript configuration
 ├── .env.example
 ├── .gitignore
-├── requirements.txt
+├── requirements.txt         # Backend dependencies
 ├── Dockerfile
 ├── docker-compose.yml
 └── README.md
@@ -74,9 +100,9 @@ A production-ready multi-agent tourism system that provides weather information 
 
 ### Prerequisites
 
-- Python 3.11 or higher
-- pip
-- Docker (optional, for containerized deployment)
+- **Python 3.11+** and pip
+- **Node.js v18+** and npm/yarn
+- **Docker** (optional, for containerized deployment)
 
 ### Local Development
 
@@ -88,32 +114,62 @@ A production-ready multi-agent tourism system that provides weather information 
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. **Install dependencies**:
+3. **Backend Setup**:
    ```bash
+   cd backend  # If you have a backend directory, otherwise stay in root
+   # Create and activate virtual environment
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   
+   # Install dependencies
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables** (optional):
+4. **Frontend Setup**:
    ```bash
+   cd frontend
+   # Install dependencies
+   npm install
+   # or
+   yarn install
+   ```
+
+5. **Set up environment variables** (optional):
+   ```bash
+   # Backend: Create .env in root directory
    cp .env.example .env
    # Edit .env if needed
+   
+   # Frontend: Create .env.local in frontend directory
+   cd frontend
+   cp .env.example .env.local
+   # Edit .env.local if backend URL is different
    ```
 
-5. **Run the application**:
+6. **Run the application**:
+   
+   **Terminal 1 - Backend:**
    ```bash
+   # Make sure you're in the root directory with venv activated
    python -m app.main
-   ```
-
-   Or using uvicorn directly:
-   ```bash
+   # Or using uvicorn directly:
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
+   
+   **Terminal 2 - Frontend:**
+   ```bash
+   cd frontend
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-6. **Access the API**:
-   - API Base: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs (Swagger UI)
-   - Alternative docs: http://localhost:8000/redoc (ReDoc)
-   - Health Check: http://localhost:8000/health
+7. **Access the application**:
+   - **Frontend UI**: http://localhost:5173
+   - **API Base**: http://localhost:8000
+   - **API Documentation**: http://localhost:8000/docs (Swagger UI)
+   - **Alternative docs**: http://localhost:8000/redoc (ReDoc)
+   - **Health Check**: http://localhost:8000/health
 
 ## Docker Deployment
 

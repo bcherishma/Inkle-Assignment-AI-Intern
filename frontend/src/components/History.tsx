@@ -18,9 +18,8 @@ export default function History() {
       setHistory(data);
     } catch (error: any) {
       // Silently fail for history - don't show error if backend is down
-      if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error') {
-        console.error('Failed to load history:', error);
-      }
+      console.error('Failed to load history:', error);
+      setHistory([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -32,9 +31,8 @@ export default function History() {
       setStats(data);
     } catch (error: any) {
       // Silently fail for stats - don't show error if backend is down
-      if (error.code !== 'ERR_NETWORK' && error.message !== 'Network Error') {
-        console.error('Failed to load stats:', error);
-      }
+      console.error('Failed to load stats:', error);
+      // Don't set stats to null, just leave it as is
     }
   };
 
